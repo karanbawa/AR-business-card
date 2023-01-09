@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>AR Business Card</title>
+  </head>
+  <body>
+    <!-- Include the WebXR and AR.js libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@latest/aframe/build/aframe-ar.js"></script>
+    <!-- Include the three.js library (for 3D rendering) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js"></script>
+    <!-- Your AR business card code goes here -->
+    <script>
+      // Set up the AR.js library
+      const ar = new AR();
+
+      // Set up the three.js scene
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera();
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      document.body.appendChild(renderer.domElement);
+
+      // Set up the three.js BlenderLoader
+      const blenderLoader = new THREE.BlenderLoader();
+
+      // Load the blend file asynchronously
+      async function main() {
+        // Load the 3D model and the social media icons
+        const businessCard = await new Promise((resolve, reject) => {
+          blenderLoader.load(
+            "card.blend",
+            (object) => resolve(object),
+            undefined,
+            reject
+          );
+        });
+        const iconLoader = new THREE.TextureLoader();
+        const linkedinIcon = await iconLoader.loadAsync("/assets/linkedin.jpg");
+        const facebookIcon = await iconLoader.loadAsync("/assets/facebook.jpg");
+        const twitterIcon = await iconLoader.loadAsync("/assets/twitter.jpg");
+
+        // Set up the business card model
+        const cardGeometry = new THREE.PlaneGeometry(1, 0.5);
+        const cardMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const cardMesh = new THREE.Mesh(cardGeometry, cardMaterial);
+        businessCard.add(cardMesh);
+
+        // Add text to the business card
+        const fontLoader = new THREE.FontLoader();
+        const font = await fontLoader.loadAsync("font.json");
+        const textGeometry = new THREE.TextGeometry("John Doe", {
+          font: font,
+          size: 0.1,
+          height: 0.01,
+        });
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        textMesh.position.set(-0.5, 0.25, 0);
+        businessCard.add(textMesh);
+
+        // Add social media icons to the business card
+        const iconGeometry = new THREE.PlaneGeometry(0.1, 0.1);
+        const linkedinIconMesh = new THREE.Mesh(
+          iconGeometry,
+          new THREE.MeshBasicMaterial({ map: linkedinIcon })
+        );
+        linkedinIconMesh.position.set(-0.4, -0.25, 0);
+        businessCard.add(linkedinIconMesh);
+        const facebookIconMesh = new THREE.Mesh(
+          iconGeometry,
+          new THREE.MeshBasicMaterial({ map: facebookIcon })
+        );
+        facebookIconMesh.position.set(-0.2, -0.25, 0);
+        businessCard.add(facebookIconMesh);
+        const twitterIconMesh = new THREE.Mesh(
+          iconGeometry,
+          new THREE.MeshBasicMaterial({ map: twitterIcon })
+        );
+        twitterIconMesh.position.set(0, -0.25, 0);
+        businessCard.add(twitterIconMesh);
+
+        // Set up the trigger image
+        const triggerImage = new Image();
+        triggerImage.src = "qr-code.png";
+
+        // When the trigger image is detected, add the business card to the scene and display a prompt asking the user to save the contact's information manually
+        ar.onStart(async () => {
+          const anchor = await scene.createAnchor(ar.getLastMarker());
+          businessCard.position.set(0, 0, 0);
+          businessCard.rotation.set(0, 0, 0);
+          anchor.addObject(businessCard);
+          // Display a prompt asking the user to save the contact's information manually
+          alert("Please save John Doe's contact information manually.");
+        });
+        // Add the trigger image to the AR.js library
+        ar.loadTriggerImage(triggerImage);
+
+        // Start the AR.js library
+        ar.start();
+      }
+      // Start the main function
+      main();
+    </script>
+  </body>
+</html>
